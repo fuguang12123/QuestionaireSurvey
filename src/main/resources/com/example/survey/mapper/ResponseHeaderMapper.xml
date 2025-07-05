@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.survey.mapper.ResponseHeaderMapper">
+
+    <!-- 插入一个答卷头 (insert) -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO response_header(survey_id, session_id, user_id, ip_address, device_info, submitted_at)
+        VALUES(#{surveyId}, #{sessionId}, #{userId}, #{ipAddress}, #{deviceInfo}, NOW())
+    </insert>
+
+    <!-- 根据问卷ID统计总提交数 (countBySurveyId) -->
+    <select id="countBySurveyId" resultType="long">
+        SELECT COUNT(*) FROM response_header WHERE survey_id = #{surveyId}
+    </select>
+
+    <!-- 根据问卷ID查询所有的答卷头信息 (findBySurveyId) -->
+    <select id="findBySurveyId" resultType="com.example.survey.entity.ResponseHeader">
+        SELECT * FROM response_header WHERE survey_id = #{surveyId} ORDER BY submitted_at ASC
+    </select>
+
+    <!-- 统计所有答卷的总数 (countAll) -->
+    <select id="countAll" resultType="long">
+        SELECT COUNT(*) FROM response_header
+    </select>
+
+    <!-- 分页查询指定问卷的答卷头信息 (findHeadersBySurveyId) -->
+    <select id="findHeadersBySurveyId" resultType="com.example.survey.controller.dto.ResponseHeaderDto">
+        SELECT
+            rh.id,
+            rh.submitted_at AS submittedAt,
+            rh.ip_address AS ipAddress,
+            IFNULL(u.username, 'Anonymous') AS submitterUsername
+        FROM
+            response_header rh
+        LEFT JOIN
+            user u ON rh.user_id = u.id
+        WHERE
+            rh.survey_id = #{surveyId}
+        ORDER BY
+            rh.submitted_at DESC
+    </select>
+
+    <!-- 根据问卷ID删除所有相关的答卷头 (deleteBySurveyId) -->
+    <delete id="deleteBySurveyId">
+        DELETE FROM response_header WHERE survey_id = #{surveyId}
+    </delete>
+
+</mapper>

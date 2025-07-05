@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.survey.mapper.ResponseDetailMapper">
+
+    <!-- 批量插入多个回答详情 (batchInsert) -->
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO response_detail (response_id, question_id, answer_data, created_at)
+        VALUES
+        <foreach collection="details" item="item" separator=",">
+            (
+            #{item.responseId}, #{item.questionId}, #{item.answerData}, NOW()
+            )
+        </foreach>
+    </insert>
+
+    <!-- 根据问卷ID查询所有回答详情 (findBySurveyId) -->
+    <select id="findBySurveyId" resultType="com.example.survey.entity.ResponseDetail">
+        SELECT
+            rd.id,
+            rd.response_id,
+            rd.question_id,
+            JSON_UNQUOTE(rd.answer_data) AS answer_data,
+            rd.created_at
+        FROM
+            response_detail rd
+                JOIN
+            response_header rh ON rd.response_id = rh.id
+        WHERE
+            rh.survey_id = #{surveyId}
+    </select>
+
+    <!-- 分页查询指定问题的原始答案 (findRawAnswersByQuestionId) -->
+    <select id="findRawAnswersByQuestionId" resultType="com.example.survey.controller.dto.RawAnswerDto">
+        SELECT
+            rd.response_id AS responseId,
+            JSON_UNQUOTE(rd.answer_data) AS answerData,
+            rh.submitted_at AS submittedAt,
+            IFNULL(u.username, 'Anonymous') AS submitterUsername
+        FROM
+            response_detail rd
+                JOIN
+            response_header rh ON rd.response_id = rh.id
+                LEFT JOIN
+            user u ON rh.user_id = u.id
+        WHERE
+            rd.question_id = #{questionId}
+        ORDER BY
+            rh.submitted_at DESC
+    </select>
+
+    <!-- 根据答卷ID查询其所有回答详情 (findByResponseId) -->
+    <select id="findByResponseId" resultType="com.example.survey.entity.ResponseDetail">
+        SELECT * FROM response_detail WHERE response_id = #{responseId}
+    </select>
+
+    <!-- 根据问题ID删除所有相关的回答详情 (deleteByQuestionId) -->
+    <delete id="deleteByQuestionId">
+        DELETE FROM response_detail WHERE question_id = #{questionId}
+    </delete>
+
+</mapper>

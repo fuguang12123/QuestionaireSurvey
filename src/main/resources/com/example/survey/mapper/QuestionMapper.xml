@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.survey.mapper.QuestionMapper">
+
+    <!-- 插入单个问题 (insert) -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO question(survey_id, content, type, is_required, options, logic, sort_order, created_at)
+        VALUES(#{surveyId}, #{content}, #{type}, #{isRequired}, #{options}, #{logic}, #{sortOrder}, NOW())
+    </insert>
+
+    <!-- 批量插入多个问题 (batchInsert) -->
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO question (survey_id, content, type, is_required, options, logic, sort_order, created_at)
+        VALUES
+        <foreach collection="questions" item="item" separator=",">
+            (
+            #{item.surveyId}, #{item.content}, #{item.type}, #{item.isRequired},
+            #{item.options}, #{item.logic}, #{item.sortOrder}, NOW()
+            )
+        </foreach>
+    </insert>
+
+    <!-- 更新单个问题 (update) -->
+    <update id="update">
+        UPDATE question
+        SET
+            content = #{content},
+            type = #{type},
+            is_required = #{isRequired},
+            options = #{options},
+            logic = #{logic},
+            sort_order = #{sortOrder}
+        WHERE
+            id = #{id}
+    </update>
+
+    <!-- 根据ID删除单个问题 (deleteById) -->
+    <delete id="deleteById">
+        DELETE FROM question WHERE id = #{id}
+    </delete>
+
+    <!-- 根据问卷ID查询所有问题 (findBySurveyId) -->
+    <select id="findBySurveyId" resultType="com.example.survey.entity.Question">
+        SELECT * FROM question WHERE survey_id = #{surveyId} ORDER BY sort_order ASC
+    </select>
+
+    <!-- 根据问卷ID删除所有问题 (deleteBySurveyId) -->
+    <delete id="deleteBySurveyId">
+        DELETE FROM question WHERE survey_id = #{surveyId}
+    </delete>
+
+</mapper>

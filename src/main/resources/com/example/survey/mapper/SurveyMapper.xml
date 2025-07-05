@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.survey.mapper.SurveyMapper">
+
+    <!-- 插入新问卷 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO survey(title, description, creator_id, type, access_code, status, start_time, end_time, settings, created_at, updated_at)
+        VALUES(#{title}, #{description}, #{creatorId}, #{type}, #{accessCode}, #{status}, #{startTime}, #{endTime}, #{settings}, NOW(), NOW())
+    </insert>
+
+    <!-- 更新问卷元数据 -->
+    <update id="updateMeta">
+        UPDATE survey SET title = #{title}, description = #{description}, type = #{type}, access_code = #{accessCode}, updated_at = NOW() WHERE id = #{id}
+    </update>
+
+    <!-- 根据ID查询问卷 -->
+    <select id="findById" resultType="com.example.survey.entity.Survey">
+        SELECT * FROM survey WHERE id = #{id}
+    </select>
+
+    <!-- 更新完整问卷 -->
+    <update id="update">
+        UPDATE survey SET
+                          title=#{title},
+                          description=#{description},
+                          type=#{type},
+                          access_code=#{accessCode},
+                          status=#{status},
+                          start_time=#{startTime},
+                          end_time=#{endTime},
+                          settings=#{settings},
+                          updated_at=NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 根据ID删除问卷 -->
+    <delete id="deleteById">
+        DELETE FROM survey WHERE id = #{id}
+    </delete>
+
+    <!-- 统计所有问卷 -->
+    <select id="countAll" resultType="long">
+        SELECT COUNT(*) FROM survey
+    </select>
+
+    <!-- 更新问卷状态 -->
+    <update id="updateStatus">
+        UPDATE survey SET status = #{status}, updated_at = NOW() WHERE id = #{id}
+    </update>
+
+    <!-- 用户查询自己的问卷列表 (动态SQL) -->
+    <select id="findByCreatorId" resultType="com.example.survey.entity.Survey">
+        SELECT * FROM survey
+        <where>
+            creator_id = #{creatorId}
+            <if test="title != null and title != ''">
+                AND title LIKE CONCAT('%', #{title}, '%')
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+            <if test="type != null and type != ''">
+                AND type = #{type}
+            </if>
+        </where>
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 管理员查询所有问卷 (动态SQL) -->
+    <select id="findAllAdmin" resultType="com.example.survey.entity.Survey">
+        SELECT
+        s.*,
+        u.username as "creator.username",
+        u.id as "creator.id"
+        FROM
+        survey s
+        JOIN
+        user u ON s.creator_id = u.id
+        <where>
+            <if test="title != null and title != ''">
+                AND s.title LIKE CONCAT('%', #{title}, '%')
+            </if>
+            <if test="username != null and username != ''">
+                AND u.username = #{username}
+            </if>
+            <if test="status != null">
+                AND s.status = #{status}
+            </if>
+        </where>
+        ORDER BY s.created_at DESC
+    </select>
+
+    <!-- 查询公开问卷 (动态SQL) -->
+    <select id="findPublicSurveys" resultType="com.example.survey.entity.Survey">
+        SELECT
+        s.*,
+        u.username as "creator.username"
+        FROM
+        survey s
+        JOIN
+        user u ON s.creator_id = u.id
+        <where>
+            s.type = 'PUBLIC' AND s.status = 1
+            <if test="title != null and title != ''">
+                AND s.title LIKE CONCAT('%', #{title}, '%')
+            </if>
+            <if test="username != null and username != ''">
+                AND u.username LIKE CONCAT('%', #{username}, '%')
+            </if>
+            <if test="startDate != null and endDate != null">
+                AND DATE(s.created_at) BETWEEN #{startDate} AND #{endDate}
+            </if>
+        </where>
+        ORDER BY s.created_at DESC
+    </select>
+
+</mapper>
